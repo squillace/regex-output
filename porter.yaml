@@ -1,0 +1,82 @@
+# This is the configuration for Porter
+# You must define steps for each action, but the rest is optional
+# See https://porter.sh/author-bundles for documentation on how to configure your bundle
+# Uncomment out the sections below to take full advantage of what Porter can do!
+
+name: regex-jsonpath-output-example
+version: 0.1.0
+description: "An example Porter of regex and jsonpath output."
+# TODO: update the registry to your own, e.g. myregistry/porter-hello:v0.1.0
+tag: squillace/output-example:v0.1.0
+
+# Uncomment the line below to use a template Dockerfile for your invocation image
+#dockerfile: Dockerfile.tmpl
+
+mixins:
+  - exec
+  - kubernetes
+
+outputs:
+- name: podname
+  description: "IP Address assigned to the Load Balancer"
+  type: string
+  applyTo: 
+  - install 
+- name: "regex"
+  description: "The captured regular expression match."
+  type: string
+  applyTo:
+  - install
+
+
+
+install:
+  - exec:
+      description: "World 2.0"
+      command: bash
+      arguments:
+        - "freetext.sh"
+      outputs:
+        - name: regex
+          regex: "(text)" # you must have one capture group
+
+  - exec:
+      description: "Trying the jsonpath output...."
+      command: kubectl
+      arguments:
+        - get 
+        - po 
+        - buck-porter-9dfd5f7b5-wq8zp 
+      flags:
+        o: json
+      outputs:
+        - name: podname
+          jsonPath: "$.metadata.name"
+upgrade:
+  - exec:
+      description: "World 2.0"
+      command: bash
+      arguments:
+        - "echo whatever"
+
+      
+
+uninstall:
+  - exec:
+      description: "Uninstall Hello World"
+      command: bash
+      arguments:
+        - "jsonstring.sh"
+
+
+# See https://porter.sh/author-bundles/#dependencies
+#dependencies:
+#  mysql:
+#    tag: getporter/mysql:v0.1.1
+#    parameters:
+#      database-name: wordpress
+
+# See https://porter.sh/wiring/#credentials
+credentials:
+  - name: kubeconfig
+    path: /root/.kube/config
